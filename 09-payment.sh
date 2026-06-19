@@ -6,6 +6,7 @@ sudo chown -R ec2-user:ec2-user $LOGS_FOLDER
 sudo chmod -R 755 $LOGS_FOLDER
 LOGS_FILE="$LOGS_FOLDER/$0.log"
 SCRIPT_DIR=$PWD
+MYSQL_HOST=mysql.daws90s.shop
 
 USERID=$(id -u)
 R="\e[31m"
@@ -28,10 +29,8 @@ VALIDATE(){
     fi
 }
 
-dnf module disable nodejs -y &>>$LOGS_FILE
-dnf module enable nodejs:20 -y  &>>$LOGS_FILE
-dnf install nodejs -y &>>$LOGS_FILE
-VALIDATE $? "Installing NodeJS:20"
+dnf install python3 gcc python3-devel -y &>>$LOGS_FILE
+VALIDATE $? "Installing Python"
 
 id roboshop &>>$LOGS_FILE
 if [ $? -ne 0 ]; then
@@ -44,38 +43,23 @@ fi
 rm -rf /app
 VALIDATE $? "Removing existing code"
 
-rm -rf /tmp/catalogue.zip
-VALIDATE $? "Removed catalogue zip"
+rm -rf /tmp/payment.zip
+VALIDATE $? "Removed payment zip"
 
 mkdir -p /app  &>>$LOGS_FILE
 VALIDATE $? "Creating app directory"
 
-curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip  &>>$LOGS_FILE
+curl -o /tmp/payment.zip https://roboshop-artifacts.s3.amazonaws.com/payment-v3.zip  &>>$LOGS_FILE
 cd /app 
-unzip /tmp/catalogue.zip &>>$LOGS_FILE
-VALIDATE $? "Downloaded and extracted catalogue code"
+unzip /tmp/payment.zip &>>$LOGS_FILE
+VALIDATE $? "Downloaded and extracted payment code"
 
-npm install  &>>$LOGS_FILE
+pip3 install -r requirements.txt  &>>$LOGS_FILE
 VALIDATE $? "Installing dependencies"
 
-cp $SCRIPT_DIR/catalogue.service /etc/systemd/system/catalogue.service
+cp $SCRIPT_DIR/payment.service /etc/systemd/system/payment.service
 VALIDATE $? "Created systemctl service"
 
-cp $SCRIPT_DIR/mongo.repo /etc/yum.repos.d/mongo.repo
-VALIDATE $? "Added Mongo repo" 
-
-dnf install mongodb-mongosh -y &>>$LOGS_FILE
-VALIDATE $? "Installed MongoDB client"
-
-INDEX=$(mongosh --host mongodb.daws90s.shop --eval 'db.getMongo().getDBNames().indexOf("catalogue")')
-
-if [ $INDEX -lt 0 ]; then
-    mongosh --host mongodb.daws90s.shop </app/db/master-data.js &>>$LOGS_FILE
-    VALIDATE $? "Load Products"
-else
-    echo -e "Products already loaded ... $Y SKIPPING $N"
-fi
-
-systemctl enable catalogue &>>$LOGS_FILE
-systemctl restart catalogue &>>$LOGS_FILE
-VALIDATE $? "Restarting catalogue"
+systemctl enable payment 
+systemctl restart payment
+VALIDATE $? "Enable and restarted payment"

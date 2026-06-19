@@ -44,38 +44,23 @@ fi
 rm -rf /app
 VALIDATE $? "Removing existing code"
 
-rm -rf /tmp/catalogue.zip
-VALIDATE $? "Removed catalogue zip"
+rm -rf /tmp/cart.zip
+VALIDATE $? "Removed cart zip"
 
 mkdir -p /app  &>>$LOGS_FILE
 VALIDATE $? "Creating app directory"
 
-curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip  &>>$LOGS_FILE
+curl -o /tmp/cart.zip https://roboshop-artifacts.s3.amazonaws.com/cart-v3.zip  &>>$LOGS_FILE
 cd /app 
-unzip /tmp/catalogue.zip &>>$LOGS_FILE
-VALIDATE $? "Downloaded and extracted catalogue code"
+unzip /tmp/cart.zip &>>$LOGS_FILE
+VALIDATE $? "Downloaded and extracted cart code"
 
 npm install  &>>$LOGS_FILE
 VALIDATE $? "Installing dependencies"
 
-cp $SCRIPT_DIR/catalogue.service /etc/systemd/system/catalogue.service
+cp $SCRIPT_DIR/cart.service /etc/systemd/system/cart.service
 VALIDATE $? "Created systemctl service"
 
-cp $SCRIPT_DIR/mongo.repo /etc/yum.repos.d/mongo.repo
-VALIDATE $? "Added Mongo repo" 
-
-dnf install mongodb-mongosh -y &>>$LOGS_FILE
-VALIDATE $? "Installed MongoDB client"
-
-INDEX=$(mongosh --host mongodb.daws90s.shop --eval 'db.getMongo().getDBNames().indexOf("catalogue")')
-
-if [ $INDEX -lt 0 ]; then
-    mongosh --host mongodb.daws90s.shop </app/db/master-data.js &>>$LOGS_FILE
-    VALIDATE $? "Load Products"
-else
-    echo -e "Products already loaded ... $Y SKIPPING $N"
-fi
-
-systemctl enable catalogue &>>$LOGS_FILE
-systemctl restart catalogue &>>$LOGS_FILE
-VALIDATE $? "Restarting catalogue"
+systemctl enable cart &>>$LOGS_FILE
+systemctl restart cart &>>$LOGS_FILE
+VALIDATE $? "Restarting cart"
