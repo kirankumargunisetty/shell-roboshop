@@ -30,7 +30,7 @@ do
          )
          R53_RECORD="$instance.DOMAIN_NAME"
     fi
-    echo "R53_RECORD: R53_RECORD"
+    echo "R53_RECORD: $R53_RECORD"
 
     #### Updating R53 Record ####
     aws route53 change-resource-record-sets \
