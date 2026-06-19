@@ -28,7 +28,7 @@ do
          --query 'Reservations[*].Instances[*].PrivateIpAddress' \
          --output text
          )
-         R53_RECORD="$instance.DOMAIN_NAME"
+         R53_RECORD="$instance.$DOMAIN_NAME"
     fi
     echo "R53_RECORD: $R53_RECORD"
 
